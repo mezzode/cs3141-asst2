@@ -42,23 +42,32 @@ matchAnywhere re = match re <|> (readCharacter >> matchAnywhere re)
 
 infixr `cons`  
 cons :: RE a -> RE [a] -> RE [a]
-cons x xs = error "'cons' unimplemented"
+cons x xs = Action (\(a, b) -> a:b) (Seq x xs)
 
 string :: String -> RE String
-string xs = error "'string' unimplemented"
+string [] = Action (\x -> []) Empty -- hacky way to represent Empty as RE String
+string (x:xs) = cons (Char [x]) (string xs)
 
 rpt :: Int -> RE a -> RE [a]
-rpt n re = error "'rpt' unimplemented"
+rpt 0 re = Action (\x -> []) Empty
+rpt n re = cons (re) (rpt (n-1) re)
 
 rptRange :: (Int, Int) -> RE a -> RE [a]
-rptRange (x,y) re = error "'rptRange' unimplemented"
+-- rptRange (x,y) re = Choose () -- could do recursively but nicer using map
+rptRange (x,y) re = choose (map (\n -> rpt n re) ranges) where
+  ranges = [y, y-1..x]
 
 option :: RE a -> RE (Maybe a)
-option re = error "'option' unimplemented"
+option re = Choose
+  (Action (\r -> Nothing) Empty)
+  (Action (\r -> Just r) re)
 
 plus :: RE a -> RE [a]
-plus re = error "'plus' unimplemented"
+-- plus re = Action (\(a, b) -> a:b) (Seq re (Star re))
+plus re = cons re (Star re) -- equivalent
 
 choose :: [RE a] -> RE a
-choose res = error "'choose' unimplemented"
+choose [] = Fail
+-- choose [r] = r -- unneeded
+choose (r:rs) = Choose r (choose rs)
 
