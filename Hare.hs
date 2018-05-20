@@ -30,7 +30,7 @@ match (Star a) =
   <|> pure []
   where 
     addFront x xs = x:xs
-  
+match (Action f a) = fmap f (match a)
 
 
 
